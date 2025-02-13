@@ -1,5 +1,9 @@
+using Cart.Api.Application.Services;
 using Cart.Api.EntityFramework;
 using Cart.Api.EventHandlers;
+using Cart.Api.Interfaces;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,9 +40,14 @@ builder.Services.AddMassTransit(busConfig =>
     });
 });
 
+builder.Services.AddTransient<IPdfService, PdfService>();
+
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 var app = builder.Build();
 
@@ -46,8 +55,17 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+        c.RoutePrefix = string.Empty; // This sets Swagger as the default route
+    });
 }
 
 app.UseHttpsRedirection();
+app.MapControllers();
+
 
 app.Run();
